@@ -1,31 +1,30 @@
 FROM debian:stable
 MAINTAINER Anton Loss @avloss
 
-RUN apt-get update && apt-get install -y wget bzip2
+USER root
 
-#RUN wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh \
-#    && bash Miniconda2-latest-Linux-x86_64.sh -b -p /anaconda3 \
-#    && rm Miniconda2-latest-Linux-x86_64.sh
-#RUN /anaconda3/bin/pip install tensorflow
-#RUN /anaconda3/bin/conda install jupyter pandas scikit-learn
-
-#RUN /anaconda3/bin/conda create -n python2 python=2.7 anaconda
-#RUN /anaconda3/envs/python2/bin/pip install tensorflow
-#RUN /anaconda3/envs/python2/bin/conda install jupyter pandas scikit-learn
+RUN apt-get update && apt-get install -y wget bzip2 git unzip
 
 RUN wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh \
     && bash Miniconda2-latest-Linux-x86_64.sh -b -p /anaconda2 \
     && rm Miniconda2-latest-Linux-x86_64.sh
 RUN /anaconda2/bin/pip install tensorflow
-RUN /anaconda2/bin/conda install jupyter pandas scikit-learn
+RUN /anaconda2/bin/conda install jupyter pandas scikit-learn pillow matplotlib
 
+RUN mkdir /repos
+WORKDIR /repos
+RUN git clone https://github.com/tensorflow/tensorflow.git
 
-COPY .jupyter /root/.jupyter
-RUN ln -s /root/.jupyter /root/.ipython
+RUN mkdir -p /repos/deepdream
+WORKDIR /repos/deepdream
+RUN wget https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip && unzip inception5h.zip
+
+WORKDIR  /repos
+RUN git clone https://github.com/aymericdamien/TensorFlow-Examples.git
 
 VOLUME /notebook
 WORKDIR /notebook
 EXPOSE 8888
 
-
-CMD ["/anaconda3/bin/jupyter", "notebook", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--notebook-dir=/notebook"]
+COPY startup.sh /startup.sh
+CMD bash /startup.sh
